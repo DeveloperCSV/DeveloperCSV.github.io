@@ -376,7 +376,7 @@
                     </select>
                 </div>
                 <button class="mode-btn praise active" data-mode="praise">✓ 表扬</button>
-                <button class="mode-btn criticism" data-mode="criticism">✗✗ 批评</button>
+                <button class="mode-btn criticism" data-mode="criticism">✗ 批评</button>
             </div>
         </div>
         
@@ -746,7 +746,7 @@
                 checkElement.textContent = state.praise ? '✓' : '';
                 checkElement.style.color = 'green';
             } else {
-                checkElement.textContent = state.criticism ? '✗✗' : '';
+                checkElement.textContent = state.criticism ? '✗' : '';
                 checkElement.style.color = 'red';
             }
         }
