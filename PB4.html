@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级表扬榜</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #87CEED;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        /* 标题栏样式 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .time-display {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        /* 学科选择样式 */
+        .subject-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .subject-select {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        
+        /* 学生列表容器样式 */
+        .students-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        /* 不分组的学生列表样式 */
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+        }
+        
+        .student-item {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .student-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .student-name {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .student-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .student-praise, .student-criticism {
+            font-size: 20px;
+            font-weight: bold;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 50%;
+            user-select: none;
+        }
+        
+        .student-praise {
+            color: #888;
+            border: 2px solid #ddd;
+        }
+        
+        .student-praise.active {
+            color: green;
+            border-color: green;
+            background-color: rgba(0, 255, 0, 0.1);
+        }
+        
+        .student-criticism {
+            color: #888;
+            border: 2px solid #ddd;
+        }
+        
+        .student-criticism.active {
+            color: red;
+            border-color: red;
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+        
+        /* 统计信息样式 */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        /* 菜单栏样式 */
+        .menu-bar {
+            display: flex;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .menu-item {
+            padding: 8px 15px;
+            margin-right: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .menu-item:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        /* 状态栏样式 */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            font-size: 14px;
+            z-index: 999;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .student-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .stat-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .stat-value, .stat-label {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 标题栏 -->
+        <div class="header">
+            <div class="title">班级实时表现公示栏</div>
+            <div class="time-display" id="timeDisplay">2023/10/15 14:30:45 星期一</div>
+            <div class="subject-selector">
+                <select id="subjectSelect" class="subject-select">
+                    <option value="语文">语文</option>
+                    <option value="数学">数学</option>
+                    <option value="英语">英语</option>
+                    <option value="物理">物理</option>
+                    <option value="化学">化学</option>
+                    <option value="政治">政治</option>
+                    <option value="历史">历史</option>
+                    <option value="地理">地理</option>
+                    <option value="生物">生物</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="praiseCount">0</div>
+                <div class="stat-label">表扬人数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="criticismCount">0</div>
+                <div class="stat-label">批评人数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalStudents">0</div>
+                <div class="stat-label">总人数</div>
+            </div>
+        </div>
+        
+        <!-- 菜单栏 -->
+        <div class="menu-bar">
+            <div class="menu-item" id="fileMenu">文件</div>
+            <div class="menu-item" id="preferencesMenu">首选项</div>
+            <div class="menu-item" id="fullscreenMenu">全屏</div>
+        </div>
+        
+        <!-- 学生列表区域 -->
+        <div class="students-container">
+            <div class="student-grid" id="studentsGrid">
+                <!-- 学生将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 状态栏 -->
+    <div class="status-bar" id="statusBar">就绪</div>
+    
+    <!-- 首选项模态框 -->
+    <div class="modal" id="preferencesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">首选项设置</div>
+                <div class="close-btn" id="closePreferences">&times;</div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">每行显示学生数</label>
+                <input type="number" class="form-control" id="studentsPerRow" min="1" max="6" value="3">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">学生名单 (每行一个学生)</label>
+                <textarea class="form-control" id="studentListText" rows="10"></textarea>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-secondary" id="resetStudents">重置为默认</button>
+                <div>
+                    <button class="btn btn-secondary" id="cancelPreferences">取消</button>
+                    <button class="btn btn-primary" id="savePreferences">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 文件菜单模态框 -->
+    <div class="modal" id="fileMenuModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">文件操作</div>
+                <div class="close-btn" id="closeFileMenu">&times;</div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-primary" id="saveData">保存信息到本地</button>
+                <button class="btn btn-primary" id="loadData">打开信息文件</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_STUDENTS = [
+            '梁诗佳', '赵狄可珂', '李辰飞', '边兆祥',
+            '王文轩', '周子翔', '秦鸥', '马浅浅',
+            '齐夕', '路豫航', '贾姚睿博', '王烨平',
+            '白昊冉', '郎晨希', '李颖恺', '秦宇轩',
+            '魏莱', '宋子源', '赵庆文', '杨尊',
+            '王晨希', '秦子恩', '彭嘉翔', '杨智雯',
+            '李明泽', '仵仵宇哲', '潘华泽', '杜建彤',
+            '孙乐天', '冯皓哲', '霍娅菲', '张锦熙',
+            '李丰硕', '王子岳', '樊颐凝', '何子烨',
+            '朱梓源', '王泓鑫', '王悦涵', '李可昕',
+            '杨曜萌', '吴雨宸', '周琳翔', '景玺多',
+            '刘骐陌', '李诗淇', '张诗雨', '夏浩然'
+        ];
+        
+        const appState = {
+            students: {},
+            studentList: [],
+            preferences: {
+                studentsPerRow: 3,
+                backgroundColor: '#87CEED',
+                studentFontFamily: '楷体',
+                studentFontSize: 18
+            },
+            modified: false
+        };
+        
+        function initApp() {
+            loadPreferences();
+            loadStudentList();
+            initStudentStates();
+            generateStudentList();
+            updateTime();
+            setInterval(updateTime, 1000);
+            setupEventListeners();
+            applyPreferences();
+            updateStats();
+        }
+        
+        function loadPreferences() {
+            const saved = localStorage.getItem('praiseBoardPreferences');
+            if (saved) {
+                try {
+                    appState.preferences = { ...appState.preferences, ...JSON.parse(saved) };
+                } catch (e) {
+                    console.error('加载首选项失败:', e);
+                }
+            }
+        }
+        
+        function savePreferences() {
+            try {
+                localStorage.setItem('praiseBoardPreferences', JSON.stringify(appState.preferences));
+                return true;
+            } catch (e) {
+                console.error('保存首选项失败:', e);
+                return false;
+            }
+        }
+        
+        function loadStudentList() {
+            const saved = localStorage.getItem('praiseBoardStudents');
+            if (saved) {
+                try {
+                    appState.studentList = JSON.parse(saved);
+                } catch (e) {
+                    console.error('加载学生名单失败:', e);
+                    appState.studentList = [...DEFAULT_STUDENTS];
+                }
+            } else {
+                appState.studentList = [...DEFAULT_STUDENTS];
+            }
+        }
+        
+        function saveStudentList() {
+            try {
+                localStorage.setItem('praiseBoardStudents', JSON.stringify(appState.studentList));
+                return true;
+            } catch (e) {
+                console.error('保存学生名单失败:', e);
+                return false;
+            }
+        }
+        
+        function initStudentStates() {
+            appState.students = {};
+            appState.studentList.forEach(student => {
+                appState.students[student] = {
+                    praise: false,
+                    criticism: false
+                };
+            });
+            
+            const saved = localStorage.getItem('praiseBoardStudentStates');
+            if (saved) {
+                try {
+                    const states = JSON.parse(saved);
+                    Object.keys(states).forEach(student => {
+                        if (appState.students[student]) {
+                            appState.students[student] = states[student];
+                        }
+                    });
+                } catch (e) {
+                    console.error('加载学生状态失败:', e);
+                }
+            }
+        }
+        
+        function saveStudentStates() {
+            try {
+                localStorage.setItem('praiseBoardStudentStates', JSON.stringify(appState.students));
+                return true;
+            } catch (e) {
+                console.error('保存学生状态失败:', e);
+                return false;
+            }
+        }
+        
+        function generateStudentList() {
+            const grid = document.getElementById('studentsGrid');
+            grid.innerHTML = '';
+            
+            appState.studentList.forEach(student => {
+                const studentItem = document.createElement('div');
+                studentItem.className = 'student-item';
+                studentItem.dataset.student = student;
+                
+                const nameElement = document.createElement('div');
+                nameElement.className = 'student-name';
+                nameElement.textContent = student;
+                nameElement.style.fontFamily = appState.preferences.studentFontFamily;
+                nameElement.style.fontSize = `${appState.preferences.studentFontSize}px`;
+                
+                const actionsElement = document.createElement('div');
+                actionsElement.className = 'student-actions';
+                
+                const praiseElement = document.createElement('div');
+                praiseElement.className = 'student-praise';
+                praiseElement.textContent = '✓';
+                praiseElement.dataset.type = 'praise';
+                praiseElement.dataset.student = student;
+                praiseElement.title = '表扬';
+                
+                const criticismElement = document.createElement('div');
+                criticismElement.className = 'student-criticism';
+                criticismElement.textContent = '✗';
+                criticismElement.dataset.type = 'criticism';
+                criticismElement.dataset.student = student;
+                criticismElement.title = '批评';
+                
+                actionsElement.appendChild(praiseElement);
+                actionsElement.appendChild(criticismElement);
+                
+                studentItem.appendChild(nameElement);
+                studentItem.appendChild(actionsElement);
+                grid.appendChild(studentItem);
+                
+                updateStudentDisplay(student);
+            });
+            
+            document.querySelectorAll('.student-praise, .student-criticism').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const student = this.dataset.student;
+                    const type = this.dataset.type;
+                    toggleStudent(student, type);
+                });
+            });
+            
+            updateGridColumns();
+        }
+        
+        function updateGridColumns() {
+            const grid = document.getElementById('studentsGrid');
+            grid.style.gridTemplateColumns = `repeat(${appState.preferences.studentsPerRow}, 1fr)`;
+        }
+        
+        function updateStudentDisplay(student) {
+            const studentItem = document.querySelector(`.student-item[data-student="${student}"]`);
+            if (!studentItem) return;
+            
+            const praiseElement = studentItem.querySelector('.student-praise');
+            const criticismElement = studentItem.querySelector('.student-criticism');
+            const state = appState.students[student];
+            
+            if (state.praise) {
+                praiseElement.classList.add('active');
+            } else {
+                praiseElement.classList.remove('active');
+            }
+            
+            if (state.criticism) {
+                criticismElement.classList.add('active');
+            } else {
+                criticismElement.classList.remove('active');
+            }
+        }
+        
+        function toggleStudent(student, type) {
+            appState.students[student][type] = !appState.students[student][type];
+            saveStudentStates();
+            updateStudentDisplay(student);
+            updateStats();
+            
+            const typeText = type === 'praise' ? '表扬' : '批评';
+            const actionText = appState.students[student][type] ? '' : '取消';
+            setStatus(`${student} ${actionText}${typeText}`);
+            
+            markModified();
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            const timeDisplay = document.getElementById('timeDisplay');
+            const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const weekday = weekdays[now.getDay()];
+            timeDisplay.textContent = `${dateStr} ${timeStr} ${weekday}`;
+        }
+        
+        function updateStats() {
+            let praiseCount = 0;
+            let criticismCount = 0;
+            
+            Object.values(appState.students).forEach(student => {
+                if (student.praise) praiseCount++;
+                if (student.criticism) criticismCount++;
+            });
+            
+            document.getElementById('praiseCount').textContent = praiseCount;
+            document.getElementById('criticismCount').textContent = criticismCount;
+            document.getElementById('totalStudents').textContent = appState.studentList.length;
+        }
+        
+        function setStatus(message) {
+            document.getElementById('statusBar').textContent = message;
+        }
+        
+        function markModified() {
+            appState.modified = true;
+            document.title = `班级表扬榜${appState.modified ? ' *' : ''}`;
+            setStatus('数据已修改');
+        }
+        
+        function unmarkModified() {
+            appState.modified = false;
+            document.title = '班级表扬榜';
+            setStatus('就绪');
+        }
+        
+        function applyPreferences() {
+            document.body.style.backgroundColor = appState.preferences.backgroundColor;
+            document.getElementById('studentsPerRow').value = appState.preferences.studentsPerRow;
+            document.getElementById('studentListText').value = appState.studentList.join('\n');
+            
+            document.querySelectorAll('.student-name').forEach(nameElement => {
+                nameElement.style.fontFamily = appState.preferences.studentFontFamily;
+                nameElement.style.fontSize = `${appState.preferences.studentFontSize}px`;
+            });
+            
+            updateGridColumns();
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('preferencesMenu').addEventListener('click', function() {
+                document.getElementById('preferencesModal').style.display = 'flex';
+            });
+            
+            document.getElementById('closePreferences').addEventListener('click', function() {
+                document.getElementById('preferencesModal').style.display = 'none';
+            });
+            
+            document.getElementById('fileMenu').addEventListener('click', function() {
+                document.getElementById('fileMenuModal').style.display = 'flex';
+            });
+            
+            document.getElementById('closeFileMenu').addEventListener('click', function() {
+                document.getElementById('fileMenuModal').style.display = 'none';
+            });
+            
+            document.getElementById('fullscreenMenu').addEventListener('click', function() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.error(`全屏请求错误: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            });
+            
+            window.addEventListener('click', function(event) {
+                if (event.target.classList.contains('modal')) {
+                    event.target.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('savePreferences').addEventListener('click', function() {
+                appState.preferences.studentsPerRow = parseInt(document.getElementById('studentsPerRow').value);
+                appState.preferences.backgroundColor = '#87CEED';
+                appState.preferences.studentFontFamily = appState.preferences.studentFontFamily;
+                appState.preferences.studentFontSize = appState.preferences.studentFontSize;
+                
+                const newStudentList = document.getElementById('studentListText').value
+                    .split('\n')
+                    .map(name => name.trim())
+                    .filter(name => name !== '');
+                
+                if (newStudentList.length > 0) {
+                    appState.studentList = newStudentList;
+                    saveStudentList();
+                    initStudentStates();
+                    generateStudentList();
+                    updateStats();
+                }
+                
+                savePreferences();
+                applyPreferences();
+                document.getElementById('preferencesModal').style.display = 'none';
+                setStatus('首选项已更新');
+            });
+            
+            document.getElementById('cancelPreferences').addEventListener('click', function() {
+                document.getElementById('preferencesModal').style.display = 'none';
+            });
+            
+            document.getElementById('resetStudents').addEventListener('click', function() {
+                if (confirm('确定要重置学生名单为默认值吗？')) {
+                    appState.studentList = [...DEFAULT_STUDENTS];
+                    document.getElementById('studentListText').value = DEFAULT_STUDENTS.join('\n');
+                    saveStudentList();
+                    initStudentStates();
+                    generateStudentList();
+                    updateStats();
+                    setStatus('学生名单已重置为默认值');
+                }
+            });
+            
+            document.getElementById('saveData').addEventListener('click', function() {
+                const dataToSave = {
+                    students: appState.students,
+                    studentList: appState.studentList,
+                    preferences: appState.preferences,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `班级表扬榜_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                unmarkModified();
+                setStatus('数据已成功保存！');
+                document.getElementById('fileMenuModal').style.display = 'none';
+            });
+            
+            document.getElementById('loadData').addEventListener('click', function() {
+                if (appState.modified) {
+                    if (!confirm('当前有未保存的更改。是否继续加载文件？')) {
+                        return;
+                    }
+                }
+                
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                
+                input.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            try {
+                                const data = JSON.parse(e.target.result);
+                                
+                                if (data.students) {
+                                    appState.students = data.students;
+                                    saveStudentStates();
+                                }
+                                
+                                if (data.studentList) {
+                                    appState.studentList = data.studentList;
+                                    saveStudentList();
+                                }
+                                
+                                if (data.preferences) {
+                                    appState.preferences = { ...appState.preferences, ...data.preferences };
+                                    savePreferences();
+                                }
+                                
+                                initStudentStates();
+                                generateStudentList();
+                                applyPreferences();
+                                updateStats();
+                                
+                                unmarkModified();
+                                setStatus('数据已成功加载！');
+                                document.getElementById('fileMenuModal').style.display = 'none';
+                            } catch (e) {
+                                setStatus('加载数据时出错: ' + e.message);
+                            }
+                        };
+                        reader.readAsText(this.files[0]);
+                    }
+                });
+                
+                input.click();
+            });
+            
+            document.getElementById('studentsPerRow').addEventListener('change', function() {
+                appState.preferences.studentsPerRow = parseInt(this.value);
+                updateGridColumns();
+            });
+            
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(event) {
+                    if (event.target === this) {
+                        this.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
