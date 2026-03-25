@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>微博风格 · 帖子卡片展示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f1f2f6;   /* 微博经典浅灰背景 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 卡片容器 - 类似微博单条卡片 */
+        .post-card {
+            max-width: 620px;
+            width: 100%;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .post-card:hover {
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 内边距统一 (头像区+正文+图片+按钮) */
+        .card-inner {
+            padding: 1rem 1.25rem 0.75rem 1.25rem;
+        }
+
+        /* 用户信息行 */
+        .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .user-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 头像 */
+        .avatar {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #ddd;
+            border: 1px solid #efefef;
+            flex-shrink: 0;
+        }
+
+        /* 昵称 + 时间区域 */
+        .name-time {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .display-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #14171a;
+            line-height: 1.3;
+            letter-spacing: -0.2px;
+        }
+
+        .user-badge {
+            font-size: 0.75rem;
+            color: #657786;
+            margin-left: 4px;
+            font-weight: 400;
+        }
+
+        .timestamp {
+            font-size: 0.72rem;
+            color: #8899a6;
+            margin-top: 2px;
+        }
+
+        /* 可选更多按钮 (占位，不参与交互) */
+        .more-btn {
+            color: #8899a6;
+            font-size: 1.2rem;
+            cursor: default;
+            padding: 4px;
+            line-height: 1;
+            user-select: none;
+        }
+
+        /* 正文内容 */
+        .post-text {
+            font-size: 0.95rem;
+            color: #1c1e21;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .post-text a {
+            color: #1b95e0;
+            text-decoration: none;
+        }
+
+        /* 图片容器 - 确保圆角统一 */
+        .post-image {
+            margin-bottom: 1rem;
+            border-radius: 16px;
+            overflow: hidden;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .post-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.2s ease;
+            object-fit: cover;
+            max-height: 460px;
+        }
+
+        /* 互动按钮栏 */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            border-top: 1px solid #eff0f2;
+            margin-top: 0.25rem;
+            padding: 0.5rem 0 0.25rem 0;
+        }
+
+        /* 单个按钮样式 (仅视觉，不响应实际逻辑) */
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: transparent;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #5b6e8c;
+            cursor: pointer;          /* 模拟可点击外观 */
+            transition: background 0.2s ease, color 0.2s ease;
+            font-family: inherit;
+            line-height: 1;
+            user-select: none;
+        }
+
+        /* 悬停效果 — 模拟互动氛围 */
+        .action-btn:hover {
+            background-color: #f0f2f5;
+        }
+
+        /* 点赞特殊悬停色 (微红) */
+        .action-btn.like:hover {
+            background-color: #fee9e6;
+            color: #e0245e;
+        }
+
+        /* 评论按钮悬停色 */
+        .action-btn.comment:hover {
+            background-color: #e8f0fe;
+            color: #1b95e0;
+        }
+
+        /* 转发按钮悬停色 */
+        .action-btn.retweet:hover {
+            background-color: #e6f7ef;
+            color: #17bf63;
+        }
+
+        /* 按钮内的数字样式 */
+        .btn-count {
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+        }
+
+        /* Emoji/图标大小 */
+        .btn-icon {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        /* 简单分隔装饰 (可选) */
+        .footer-note {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #b9c2cc;
+            padding: 0.9rem 1rem 1rem;
+            border-top: none;
+            background: #fff;
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* 响应式调整: 移动端更紧凑 */
+        @media (max-width: 560px) {
+            body {
+                padding: 1rem;
+            }
+            .card-inner {
+                padding: 0.9rem 1rem 0.6rem 1rem;
+            }
+            .avatar {
+                width: 40px;
+                height: 40px;
+            }
+            .action-btn {
+                gap: 5px;
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+            .btn-icon {
+                font-size: 1rem;
+            }
+            .btn-count {
+                font-size: 0.75rem;
+            }
+            .post-text {
+                font-size: 0.88rem;
+            }
+        }
+
+        /* 让图片区域优雅显示 */
+        @media (max-width: 420px) {
+            .action-bar {
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+            .action-btn {
+                padding: 6px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="post-card">
+    <div class="card-inner">
+        <!-- 用户信息区域 -->
+        <div class="user-info">
+            <div class="user-left">
+                <!-- 头像图片：可自定义本地或在线URL (此处使用在线随机人像，可任意替换) -->
+                <img class="avatar" src="https://i2.hdslb.com/bfs/face/6db58dab1772fd3c934588c7f9f661f13890da5e.jpg@96w_96h.webp" alt="用户头像" 
+                     title="可自定义头像URL（修改img的src即可）">
+                <div class="name-time">
+                    <div class="display-name">
+                        孙小川大王 
+                        <span class="user-badge"></span>
+                    </div>
+                    <div class="timestamp">2 天前 · 来自 轻享版</div>
+                </div>
+            </div>
+            <div class="more-btn" aria-label="更多操作">⋯</div>
+        </div>
+
+        <!-- 帖子正文内容 -->
+        <div class="post-text">
+            请输入文本
+            <a href="javascript:void(0)" style="cursor: default;">#恶搞#</a> 
+        </div>
+
+        <!-- 图片区域：帖子配图，URL完全可自定义（本地或网络图片均可） -->
+        <div class="post-image">
+            <img src="https://picsum.photos/id/104/680/480" 
+                 alt="帖子配图 - 春日风景示例" 
+                 title="帖子配图 (可替换src为任意本地/网络图片地址)">
+        </div>
+    </div>
+
+    <!-- 互动按钮栏 (点赞 / 评论 / 转发) 仅为视觉展示，无实际后端响应 -->
+    <div class="action-bar">
+        <!-- 点赞按钮 -->
+        <div class="action-btn like" aria-label="点赞按钮">
+            <span class="btn-icon">❤️</span>
+            <span class="btn-count">328</span>
+        </div>
+        <!-- 评论按钮 -->
+        <div class="action-btn comment" aria-label="评论按钮">
+            <span class="btn-icon">💬</span>
+            <span class="btn-count">42</span>
+        </div>
+        <!-- 转发按钮 -->
+        <div class="action-btn retweet" aria-label="转发按钮">
+            <span class="btn-icon">🔄</span>
+            <span class="btn-count">18</span>
+        </div>
+        <!-- 可选: 增加一个分享按钮 (保持类似微博风格但不超纲，显得完整) 
+             分享按钮无需响应，仅做展示  -->
+        <div class="action-btn" style="color:#5b6e8c;" aria-label="分享按钮（无响应）">
+            <span class="btn-icon">📤</span>
+            <span class="btn-count">9</span>
+        </div>
+    </div>
+
+    <!-- 仅用于视觉装饰的轻提示，表示静态展示用途 (道具展示) -->
+    <div class="footer-note">
+        仅作为拍摄使用 AI太好使了你知道吗
+    </div>
+</div>
+
+<!-- 
+    设计说明：
+    - 本页面为一个完整的静态论坛卡片，类似微博单条帖子风格。
+    - 包含头像、昵称、发布时间、正文、图片区域以及点赞/评论/转发/分享按钮。
+    - 图片 URL 完全自定义：当前配图使用 picsum 在线示例 (ID/104)，您可以轻松替换 img 标签的 src 为本地图片路径或其他网络图片地址。
+    - 所有按钮（点赞、评论、转发等）均无实际JavaScript响应，仅设计鼠标悬停效果，展示论坛应有的交互控件。
+    - 卡片自适应移动端和桌面，干净简洁，符合道具展示需求。
+-->
+</body>
+</html>
